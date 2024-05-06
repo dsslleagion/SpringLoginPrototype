@@ -1,27 +1,20 @@
 package com.fatech.entity;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
+
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Entity
 @Table(name = "usuario")
@@ -59,10 +52,6 @@ public class Usuario {
     @Column(name = "update_at", nullable = false)
     private LocalDateTime update_at;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "usuario_autorizacao", joinColumns = @JoinColumn(name = "id_usuario"), inverseJoinColumns = @JoinColumn(name = "aut_id"))
-    private Set<Autorizacao> autorizacoes = new HashSet<>();
-
     public Long getId_usuario() {
         return id_usuario;
     }
@@ -74,14 +63,6 @@ public class Usuario {
     public void setSenha(String senha) {
         PasswordEncoder encoder = new BCryptPasswordEncoder();
         this.senha = encoder.encode(senha);
-    }
-
-    public Set<Autorizacao> getAutorizacoes() {
-        return autorizacoes;
-    }
-
-    public void setAutorizacoes(Set<Autorizacao> autorizacoes) {
-        this.autorizacoes = autorizacoes;
     }
 
     public void setId_usuario(Long id_usuario) {

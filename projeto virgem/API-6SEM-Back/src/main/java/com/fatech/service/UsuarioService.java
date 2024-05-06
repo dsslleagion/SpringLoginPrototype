@@ -1,18 +1,18 @@
 package com.fatech.service;
 
-import com.fatech.entity.Usuario;
-import com.fatech.repository.AutorizacaoRepository;
-import com.fatech.repository.UsuarioRepository;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.fatech.entity.Usuario;
+import com.fatech.repository.UsuarioRepository;
 
 @Service
 public class UsuarioService {
@@ -37,10 +37,7 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
-    @Autowired
-    private AutorizacaoRepository autRepo;
-
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<Usuario> buscarTodosUsuarios() {
         List<Usuario> todosUsuario = usuarioRepository.findAll();
         if (todosUsuario.isEmpty()) {

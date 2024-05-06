@@ -9,7 +9,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.fatech.entity.Autorizacao;
 import com.fatech.entity.Usuario;
 import com.fatech.repository.UsuarioRepository;
 
@@ -29,13 +28,8 @@ public class SegurancaService implements UserDetailsService {
         }
 
         Usuario usuario = usuarioOp.get();
-        String autorizacoes[] = new String[usuario.getAutorizacoes().size()];
-        Integer i = 0;
-        for (Autorizacao aut : usuario.getAutorizacoes()) {
-            autorizacoes[i++] = aut.getNome();
-        }
 
-        return User.builder().username(usuario.getEmail()).password(usuario.getSenha()).authorities(autorizacoes)
+        return User.builder().username(usuario.getEmail()).password(usuario.getSenha()).authorities(usuario.getTipo_usuario())
                 .build();
     }
 

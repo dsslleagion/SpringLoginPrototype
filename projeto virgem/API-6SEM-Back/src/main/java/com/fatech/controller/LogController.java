@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +20,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import com.fatech.repository.LogRepository; // Import the interface
+
 
 @RestController
 @RequestMapping(value = "/log")
@@ -29,9 +29,6 @@ import com.fatech.repository.LogRepository; // Import the interface
 public class LogController {
     @Autowired
     private LogService service;
-
-    @Autowired
-    private LogRepository logRepository;
 
     @Operation(summary = "Realiza a busca de registros", method = "GET", description = "Busca todos os registros")
     @ApiResponses(value = {
