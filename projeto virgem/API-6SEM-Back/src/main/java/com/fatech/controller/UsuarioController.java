@@ -1,6 +1,8 @@
 package com.fatech.controller;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fatech.entity.Usuario;
+import com.fatech.service.EmailService;
 import com.fatech.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -8,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -22,6 +25,9 @@ public class UsuarioController {
 
     @Autowired
     private UsuarioService usuarioService;
+
+    @Autowired
+    private EmailService emailService;
 
     @Operation(summary = "Criar um usuário", description = "Cria um novo usuário")
     @ApiResponses(value = {
@@ -76,4 +82,41 @@ public class UsuarioController {
         usuarioService.desativarUsuario(id);
         return ResponseEntity.noContent().build();
     }
+
+    // @PostMapping("/enviar-email")
+    // public ResponseEntity<?> enviarEmail(@RequestParam String email) {
+    //     try {
+    //         emailService.enviarEmail(email, "template_a5flxiu", "64skWYeEq_nk8m4PE", "{\"email\":\"" + email + "\"}");
+    //         return ResponseEntity.ok("Email enviado com sucesso.");
+    //     } catch (Exception e) {
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    //                 .body("Erro ao enviar email: " + e.getMessage());
+    //     }
+    // }
+
+    @PostMapping("/enviar-email")
+public ResponseEntity<?> enviarEmail(@RequestParam(required = false) String email, @RequestBody(required = false) Map<String, Object> requestBody) {
+    try {
+        // Verifica se o email está presente na URL ou no corpo da solicitação
+        if (email == null && requestBody != null && requestBody.containsKey("email")) {
+            // Obtém o email do corpo da solicitação
+            email = (String) requestBody.get("email");
+        }
+
+        // Verifica se o email foi encontrado em algum lugar
+        if (email == null) {
+            return ResponseEntity.badRequest().body("O endereço de email não foi fornecido.");
+        }
+
+        // Chama o serviço de envio de email
+        emailService.enviarEmail(email, "template_a5flxiu", "64skWYeEq_nk8m4PE", "{\"email\":\"" + email + "\"}");
+        
+        return ResponseEntity.ok("Email enviado com sucesso.");
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Erro ao enviar email: " + e.getMessage());
+    }
+}
+
+
 }
