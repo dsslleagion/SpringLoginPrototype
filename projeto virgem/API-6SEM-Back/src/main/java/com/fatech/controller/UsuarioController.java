@@ -83,40 +83,68 @@ public class UsuarioController {
         return ResponseEntity.noContent().build();
     }
 
-    // @PostMapping("/enviar-email")
-    // public ResponseEntity<?> enviarEmail(@RequestParam String email) {
-    //     try {
-    //         emailService.enviarEmail(email, "template_a5flxiu", "64skWYeEq_nk8m4PE", "{\"email\":\"" + email + "\"}");
-    //         return ResponseEntity.ok("Email enviado com sucesso.");
-    //     } catch (Exception e) {
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-    //                 .body("Erro ao enviar email: " + e.getMessage());
-    //     }
-    // }
 
-    @PostMapping("/enviar-email")
-public ResponseEntity<?> enviarEmail(@RequestParam(required = false) String email, @RequestBody(required = false) Map<String, Object> requestBody) {
+@PostMapping("/enviar-codigo-verificacao/query")
+    public ResponseEntity<?> enviarCodigoVerificacaoPorEmail(@RequestParam String email) {
+        try {
+            usuarioService.enviarCodigoVerificacaoPorEmail(email);
+            return ResponseEntity.ok("Código de verificação enviado com sucesso.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erro ao enviar código de verificação: " + e.getMessage());
+        }
+    }
+
+@PostMapping("/enviar-codigo-verificacao/body")
+public ResponseEntity<?> enviarCodigoVerificacaoPorEmail(@RequestBody Map<String, String> requestBody) {
+    String email = requestBody.get("email");
+    if (email == null || email.isEmpty()) {
+        return ResponseEntity.badRequest().body("O email não foi fornecido no corpo da solicitação.");
+    }
+
     try {
-        // Verifica se o email está presente na URL ou no corpo da solicitação
-        if (email == null && requestBody != null && requestBody.containsKey("email")) {
-            // Obtém o email do corpo da solicitação
-            email = (String) requestBody.get("email");
-        }
-
-        // Verifica se o email foi encontrado em algum lugar
-        if (email == null) {
-            return ResponseEntity.badRequest().body("O endereço de email não foi fornecido.");
-        }
-
-        // Chama o serviço de envio de email
-        emailService.enviarEmail(email, "template_a5flxiu", "64skWYeEq_nk8m4PE", "{\"email\":\"" + email + "\"}");
-        
-        return ResponseEntity.ok("Email enviado com sucesso.");
+        usuarioService.enviarCodigoVerificacaoPorEmail(email);
+        return ResponseEntity.ok("Código de verificação enviado com sucesso.");
     } catch (Exception e) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Erro ao enviar email: " + e.getMessage());
+                .body("Erro ao enviar código de verificação: " + e.getMessage());
     }
 }
+
+@PostMapping("/verificar-codigo-verificacao")
+public ResponseEntity<?> verificarCodigoVerificacao(@RequestBody Map<String, String> requestBody) {
+    String email = requestBody.get("email");
+    String codigo = requestBody.get("codigo");
+
+    if (email == null || email.isEmpty() || codigo == null || codigo.isEmpty()) {
+        return ResponseEntity.badRequest().body("O email e o código de verificação devem ser fornecidos no corpo da solicitação.");
+    }
+
+    try {
+        boolean codigoValido = usuarioService.verificarCodigoVerificacao(email, codigo);
+        if (codigoValido) {
+            return ResponseEntity.ok("Código de verificação válido.");
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Código de verificação inválido.");
+        }
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Erro ao verificar código de verificação: " + e.getMessage());
+    }
+}
+    // Rota para alterar senha
+    @PutMapping("/alterar-senha")
+    public ResponseEntity<?> alterarSenha(@RequestParam String email, @RequestParam String novaSenha) {
+        try {
+            usuarioService.alterarSenha(email, novaSenha);
+            return ResponseEntity.ok("Senha alterada com sucesso.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erro ao alterar senha: " + e.getMessage());
+        }
+    }
+
 
 
 }

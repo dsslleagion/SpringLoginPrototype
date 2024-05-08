@@ -37,6 +37,9 @@ public class Usuario {
     @Column(name = "senha", nullable = false)
     private String senha;
 
+    @Column(name = "codigoVerificacao", nullable = false)
+    private String codigoVerificacao;
+
     @Column(name = "tipo_usuario", nullable = false)
     private String tipo_usuario;
 
@@ -93,13 +96,6 @@ public class Usuario {
         this.matricula_empresa = matricula_empresa;
     }
 
-    // public String getSenha() {
-    // return senha;
-    // }
-
-    // public void setSenha(String senha) {
-    // this.senha = senha;
-    // }
 
     public String getTipo_usuario() {
         return tipo_usuario;
@@ -163,6 +159,14 @@ public class Usuario {
         if (!isStatus()) {
             update_at = LocalDateTime.now();
         }
+    }
+
+    public String getCodigoVerificacao() {
+        return codigoVerificacao;
+    }
+
+    public void setCodigoVerificacao(String codigoVerificacao) {
+        this.codigoVerificacao = codigoVerificacao;
     }
 
 }

@@ -3,6 +3,7 @@ package com.fatech.service;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,6 +74,52 @@ public class UsuarioService {
         } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Erro ao desativar usuário.");
         }
+    }
+     @Autowired
+    private EmailService emailService;
+
+    // Função para enviar código de verificação por email
+    public void enviarCodigoVerificacaoPorEmail(String email) {
+        // Verificar se o email está registrado no sistema
+        Optional<Usuario> optionalUsuario = usuarioRepository.findByEmail(email);
+        if (optionalUsuario.isPresent()) {
+            Usuario usuario = optionalUsuario.get();
+            String codigoVerificacao = gerarCodigoVerificacao();
+            usuario.setCodigoVerificacao(codigoVerificacao);
+            usuarioRepository.save(usuario);
+            try {
+                emailService.enviarEmail(email, "template_a5flxiu", "64skWYeEq_nk8m4PE", "{\"email\":\"" + email + "\", \"codigoVerificacao\":\"" + codigoVerificacao + "\"}");
+            } catch (Exception e) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Erro ao enviar email: " + e.getMessage());
+            }
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado");
+        }
+    }
+
+    // Função para verificar código de verificação
+    public boolean verificarCodigoVerificacao(String email, String codigo) {
+        Optional<Usuario> optionalUsuario = usuarioRepository.findByEmailAndCodigoVerificacao(email, codigo);
+        return optionalUsuario.isPresent();
+    }
+
+    // Função para alterar senha
+    public void alterarSenha(String email, String novaSenha) {
+        Optional<Usuario> optionalUsuario = usuarioRepository.findByEmail(email);
+        if (optionalUsuario.isPresent()) {
+            Usuario usuario = optionalUsuario.get();
+            usuario.setSenha(novaSenha);
+            usuarioRepository.save(usuario);
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado");
+        }
+    }
+
+    // Método para gerar um código de verificação
+    private String gerarCodigoVerificacao() {
+        Random random = new Random();
+        int codigo = 100000 + random.nextInt(900000); // Gera um número aleatório entre 100000 e 999999
+        return String.valueOf(codigo);
     }
 
 }
