@@ -84,18 +84,9 @@ public class UsuarioController {
     }
 
 
-@PostMapping("/enviar-codigo-verificacao/query")
-    public ResponseEntity<?> enviarCodigoVerificacaoPorEmail(@RequestParam String email) {
-        try {
-            usuarioService.enviarCodigoVerificacaoPorEmail(email);
-            return ResponseEntity.ok("Código de verificação enviado com sucesso.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erro ao enviar código de verificação: " + e.getMessage());
-        }
-    }
 
-@PostMapping("/enviar-codigo-verificacao/body")
+
+@PostMapping("/enviar-codigo-verificacao")
 public ResponseEntity<?> enviarCodigoVerificacaoPorEmail(@RequestBody Map<String, String> requestBody) {
     String email = requestBody.get("email");
     if (email == null || email.isEmpty()) {
@@ -133,17 +124,25 @@ public ResponseEntity<?> verificarCodigoVerificacao(@RequestBody Map<String, Str
                 .body("Erro ao verificar código de verificação: " + e.getMessage());
     }
 }
-    // Rota para alterar senha
-    @PutMapping("/alterar-senha")
-    public ResponseEntity<?> alterarSenha(@RequestParam String email, @RequestParam String novaSenha) {
-        try {
-            usuarioService.alterarSenha(email, novaSenha);
-            return ResponseEntity.ok("Senha alterada com sucesso.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erro ao alterar senha: " + e.getMessage());
-        }
+
+@PutMapping("/alterar-senha")
+public ResponseEntity<?> alterarSenha(@RequestBody Map<String, String> requestBody) {
+    String email = requestBody.get("email");
+    String codigo = requestBody.get("codigo");
+    String novaSenha = requestBody.get("novaSenha");
+
+    if (email == null || email.isEmpty() || codigo == null || codigo.isEmpty() || novaSenha == null || novaSenha.isEmpty()) {
+        return ResponseEntity.badRequest().body("O email, código de verificação e nova senha devem ser fornecidos no corpo da solicitação.");
     }
+
+    try {
+        usuarioService.alterarSenha(email, codigo, novaSenha);
+        return ResponseEntity.ok("Senha alterada com sucesso.");
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Erro ao alterar senha: " + e.getMessage());
+    }
+}
 
 
 

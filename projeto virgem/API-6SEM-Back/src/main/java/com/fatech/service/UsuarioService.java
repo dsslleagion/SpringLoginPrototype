@@ -1,9 +1,12 @@
 package com.fatech.service;
 
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,12 +17,19 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.fatech.entity.Usuario;
 import com.fatech.repository.UsuarioRepository;
+import java.time.Duration;
 
 @Service
 public class UsuarioService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private EmailService emailService;
+
+   private Map<String, VerificationCode> verificationCodes = new ConcurrentHashMap<>();
+
 
     public Usuario criarUsuario(Usuario usuario) {
         if (usuario == null ||
@@ -75,46 +85,70 @@ public class UsuarioService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Erro ao desativar usuário.");
         }
     }
-     @Autowired
-    private EmailService emailService;
 
-    // Função para enviar código de verificação por email
-    public void enviarCodigoVerificacaoPorEmail(String email) {
-        // Verificar se o email está registrado no sistema
-        Optional<Usuario> optionalUsuario = usuarioRepository.findByEmail(email);
-        if (optionalUsuario.isPresent()) {
-            Usuario usuario = optionalUsuario.get();
-            String codigoVerificacao = gerarCodigoVerificacao();
-            usuario.setCodigoVerificacao(codigoVerificacao);
-            usuarioRepository.save(usuario);
-            try {
-                emailService.enviarEmail(email, "template_a5flxiu", "64skWYeEq_nk8m4PE", "{\"email\":\"" + email + "\", \"codigoVerificacao\":\"" + codigoVerificacao + "\"}");
-            } catch (Exception e) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Erro ao enviar email: " + e.getMessage());
-            }
-        } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado");
+
+   public void enviarCodigoVerificacaoPorEmail(String email) {
+    // Verificar se o email está registrado no sistema
+    Optional<Usuario> optionalUsuario = usuarioRepository.findByEmail(email);
+    if (optionalUsuario.isPresent()) {
+        String codigoVerificacao = gerarCodigoVerificacao();
+        // Armazena o código de verificação com o email do usuário
+        verificationCodes.put(email, new VerificationCode(codigoVerificacao, Instant.now()));
+        try {
+            emailService.enviarEmail(email, "template_a5flxiu", "64skWYeEq_nk8m4PE", "{\"email\":\"" + email + "\", \"codigoVerificacao\":\"" + codigoVerificacao + "\"}");
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Erro ao enviar email: " + e.getMessage());
         }
+    } else {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado");
+    }
+}
+
+// Estrutura para armazenar o código de verificação e o momento de sua criação
+private static class VerificationCode {
+    private String code;
+    private Instant createdAt;
+
+    public VerificationCode(String code, Instant createdAt) {
+        this.code = code;
+        this.createdAt = createdAt;
     }
 
-    // Função para verificar código de verificação
-    public boolean verificarCodigoVerificacao(String email, String codigo) {
-        Optional<Usuario> optionalUsuario = usuarioRepository.findByEmailAndCodigoVerificacao(email, codigo);
-        return optionalUsuario.isPresent();
+    public String getCode() {
+        return code;
     }
 
-    // Função para alterar senha
-    public void alterarSenha(String email, String novaSenha) {
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+}
+
+
+public boolean verificarCodigoVerificacao(String email, String codigo) {
+    VerificationCode verificationCode = verificationCodes.get(email);
+    if (verificationCode != null && verificationCode.getCode().equals(codigo)) {
+        // Verifica se o código ainda está dentro do período de validade (5 minutos)
+        return Duration.between(verificationCode.getCreatedAt(), Instant.now()).toMinutes() <= 5;
+    }
+    return false;
+}
+public void alterarSenha(String email, String codigo, String novaSenha) {
+    // Verificar se o código de verificação é válido
+    if (verificarCodigoVerificacao(email, codigo)) {
         Optional<Usuario> optionalUsuario = usuarioRepository.findByEmail(email);
         if (optionalUsuario.isPresent()) {
             Usuario usuario = optionalUsuario.get();
             usuario.setSenha(novaSenha);
             usuarioRepository.save(usuario);
+            // Remover o código de verificação após a alteração da senha
+            verificationCodes.remove(email);
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado");
         }
+    } else {
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Código de verificação inválido ou expirado");
     }
-
+}
     // Método para gerar um código de verificação
     private String gerarCodigoVerificacao() {
         Random random = new Random();
